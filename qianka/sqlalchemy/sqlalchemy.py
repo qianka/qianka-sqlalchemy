@@ -131,8 +131,9 @@ class QKSQLAlchemy(object):
         self._session_lock = Lock()
 
         # auto mapped models
+        self._tables = {}
         self._models = {}
-        self._model_lock = Lock()
+        self._reflect_lock = Lock()
 
         # scopefunc
         self.scopefunc = None
@@ -238,13 +239,16 @@ class QKSQLAlchemy(object):
         :param bind_key:
         :return: ORMClass
         """
-        with self._model_lock:
+        with self._reflect_lock:
             if table_name in self._models:
                 return self._models[table_name]
 
             engine = self.get_engine(bind_key)
             meta = MetaData(bind=engine)
             meta.reflect(only=[table_name])
+
+            table = meta.tables[table_name]
+            self._tables[table_name] = table
 
             Base = automap_base(metadata=meta)
             Base.prepare()
@@ -254,6 +258,22 @@ class QKSQLAlchemy(object):
             self._models[table_name] = model
 
             return model
+
+    def reflect_table(self, table_name, bind_key=None):
+        with self._reflect_lock:
+            if table_name in self._tables:
+                return self._tables[table_name]
+
+            engine = self.get_engine(bind_key)
+            meta = MetaData(bind=engine)
+            meta.reflect(only=[table_name])
+
+            table = meta.tables[table_name]
+            table.metadata = None
+            self._tables[table_name] = table
+
+            return table
+
 
 #
 # 横向拆分缺省实现
