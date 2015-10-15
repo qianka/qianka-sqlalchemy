@@ -122,6 +122,7 @@ class QKSQLAlchemy(object):
         self._config.setdefault('SQLALCHEMY_POOL_TIMEOUT', 30)
         self._config.setdefault('SQLALCHEMY_POOL_RECYCLE', 60)
         self._config.setdefault('SQLALCHEMY_MAX_OVERFLOW', 10)
+        self._config.setdefault('SQLALCHEMY_ECHO', True)
 
         # 数据库链接引擎是多个请求间的 Session 共享的
         self._engines = {}
@@ -157,6 +158,7 @@ class QKSQLAlchemy(object):
         - SQLALCHEMY_POOL_TIMEOUT: 30
         - SQLALCHEMY_POOL_RECYCLE: 60
         - SQLALCHEMY_MAX_OVERFLOW: 10
+        - SQLALCHEMY_ECHO: True
         """
         if config:
             self._config.update(config)
@@ -205,8 +207,8 @@ class QKSQLAlchemy(object):
         else:
             options.update({'poolclass': NullPool})
 
-        # TODO: echo or not by custom settings
-        options.update({'echo': True, 'echo_pool': True})
+        if self._config['SQLALCHEMY_ECHO']:
+            options.update({'echo': True, 'echo_pool': True})
         return create_engine(uri, **options)
 
     def get_engine(self, bind_key=None):
